@@ -1,0 +1,96 @@
+import requests
+url_1 = "https://api.coffefound.tcl.zendo.cloud"
+url_register = "/api/v1/register"
+url_auf = "/api/v1/login"
+url_acc = "/api/v1/user/finance/accounts"
+url_shop = "/api/v1/shop/carts"
+
+admin_login = "admin"
+admin_password = "123456"
+password = "123456"
+login = "q3005"  # логин пользователя
+product_id = "15"   #1  15
+quantity = "1"
+
+headers = register_headers = {
+    'Content-Type': 'application/json;charset=UTF-8',
+    'Accept': 'application/json, text/plain, */*'
+}
+
+
+class Shop:
+    def shop_buy(self):
+        # Авторизация
+        body_auth = {
+            "login": login,
+            "password": password
+        }
+
+        print("Шаг 1. Авторизация клиентом")
+        response_auth = requests.post(url=url_1 + url_auf, headers=register_headers, json=body_auth)
+        assert response_auth.status_code == 200, f"Ошибка авторизации: {response_auth.text}"
+
+        token = response_auth.json()['data']['token']
+        auth_headers = {
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Accept': 'application/json, text/plain, */*'
+        }
+
+        # Создание корзины
+        print("Шаг 2. Создание корзины")
+        response_cart = requests.post(url=url_1 + url_shop, headers=auth_headers)
+        assert response_cart.status_code == 200, f"Ошибка создания корзины: {response_cart.text}"
+        cart_id = response_cart.json()['data']['id']
+        print("Корзина создана, ID:", cart_id)
+
+        # Добавление товара в корзину
+        print("Шаг 3. Добавление товара")
+        body_add = {
+            "product_id": product_id,
+            "quantity": quantity
+        }
+
+        url_add_item = f"{url_1}/api/v1/shop/carts/{cart_id}/add-product"
+        response_add = requests.post(url=url_add_item, headers=auth_headers, json=body_add)
+        assert response_add.status_code == 200, f"Ошибка добавления товара: {response_add.text}"
+
+        total_price = float(response_add.json()['data']['total_price'])
+        print("Товар добавлен. Сумма заказа:", total_price)
+
+        # Финальный шаг: Оформление заказа
+        print("Шаг 4. Оформление заказа")
+
+        body_checkout = {
+            "payment_type": "payment",
+            "payments": [
+                {
+                    "payment_id": 29,  # <-- ОБЯЗАТЕЛЬНО замените на рабочий ID метода оплаты типа "payment"
+                    "payment_type": "payment",
+                    "amount": total_price
+                }
+            ],
+            "payment_currency_id": 4,
+            "police_agree": "true",
+            "statusUser": "1",
+            "recipient_type": "me",
+            "do_not_call_back": "0",
+            "delivery_method_id": 1,
+            "delivery_city_id": 4363602,
+            "financial_password": password,
+            "second_name": "John",
+            "phone": "+380972133322",
+            "name": "Pol",
+            "delivery_pickup_point_id": 1,
+            "redirect_url": "https://site.com"
+        }
+
+        url_checkout = f"{url_1}/api/v1/shop/carts/{cart_id}/checkout"
+        response_checkout = requests.post(url=url_checkout, headers=auth_headers, json=body_checkout)
+        print("Ответ сервера на покупку:", response_checkout.status_code)
+        print(response_checkout.json())
+
+
+# Запуск
+a = Shop()
+a.shop_buy()
