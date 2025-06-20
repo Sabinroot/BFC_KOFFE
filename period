@@ -1,0 +1,19 @@
+import time
+import requests
+
+
+def send_post_request(url, total_cycles):
+    for i in range(total_cycles):
+        try:
+            response = requests.post(url)
+            print(f"Запрос {i + 1}/{total_cycles}: Код ответа {response.status_code}")
+        except requests.RequestException as e:
+            print(f"Ошибка при отправке запроса: {e}")
+        if i < total_cycles - 1:
+            time.sleep(2)  # Ждем 5 секунд перед следующим запросом
+
+
+if __name__ == "__main__":
+    url = "https://krivchenkov4.tback.zendo.cloud/api/v1/commands/period:close"
+    total_cycles = int(input("Введите количество циклов: "))
+    send_post_request(url, total_cycles)
